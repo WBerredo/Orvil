@@ -10,6 +10,7 @@
         "indent": [2, 2],
         "max-len": ["error", 80],
         "no-console": "off",
-        "prefer-destructuring": "off"
+        "prefer-destructuring": "off",
+        "prefer-const": "off"
     }
 }
