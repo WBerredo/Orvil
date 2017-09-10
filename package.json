@@ -1,11 +1,11 @@
 {
   "name": "orvil",
-  "version": "0.1",
+  "version": "0.2.0",
   "description": "Messenger chatbot for books search and recommendation",
   "main": "processMessage.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint processMessage.js lib"
+    "lint": "eslint processMessage.js lib model"
   },
   "repository": {
     "type": "git",
