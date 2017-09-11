@@ -11,6 +11,13 @@
         "max-len": ["error", 80],
         "no-console": "off",
         "prefer-destructuring": "off",
-        "prefer-const": "off"
+        "prefer-const": "off",
+        "comma-dangle": ["error", {
+            "arrays": "always-multiline",
+            "objects": "always-multiline",
+            "imports": "always-multiline",
+            "exports": "always-multiline",
+            "functions": "ignore"
+        }]
     }
 }

@@ -1,6 +1,16 @@
+const dedent = require('dedent-js');
+
 class Message {
   static get WELCOME() {
-    return 'Olá, eu sou o Orvil';
+    return dedent`Olá, eu sou o Orvil, um chatbot que vai te ajudar a encontrar 
+      as melhores ofertas de livros online. Você pode pesquisar livros nas
+      lojas mais confiáveis da web simplesmente digitando o nome do livro ou 
+      autor e eu farei tudo que puder para ajudar.`;
+  }
+
+  static get SUBSCRIBE_QUESTION() {
+    return dedent`Além de pode pesquisar qualquer livro, você também gostaria 
+      de receber recomendações semanais de ofertas de livros?`;
   }
 
   static get SEARCH_RESULTS() {
