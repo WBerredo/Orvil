@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/WBerredo/Orvil#readme",
   "dependencies": {
-    "axios": "^0.16.2"
+    "axios": "^0.16.2",
+    "dedent-js": "^1.0.1"
   },
   "devDependencies": {
     "eslint": "^4.6.1",

@@ -1,6 +1,7 @@
 console.log('Loading function');
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const START_PAYLOAD = 'start';
 const MessageSender = require('./lib/MessageSender');
 const lomadee = require('./lib/LomadeeHandler');
 const Offer = require('./model/Offer');
@@ -8,12 +9,10 @@ const Message = require('./model/Message');
 
 function verifyToken(parameters, callback) {
   let serverToken = parameters['hub.verify_token'];
-  /* eslint-disable */
   let response = {
     body: null,
     statusCode: null,
   };
-  /*eslint-enable */
 
   if (serverToken === VERIFY_TOKEN) {
     let challenge = parseInt(parameters['hub.challenge'], 10);
@@ -44,6 +43,17 @@ function processMessages(evt, callback) {
           let senderId = msg.sender.id;
           let messageText = msg.message.text;
 
+          if (msg.message.quick_reply &&
+            msg.message.quick_reply.payload ===
+            MessageSender.SUBSCRIBE_YES_PAYLOAD) {
+            console.log('Subscribe', senderId);
+            return;
+          } else if (msg.message.quick_reply &&
+            msg.message.quick_reply.payload ===
+            MessageSender.SUBSCRIBE_NO_PAYLOAD) {
+            return;
+          }
+
           lomadee.searchByKeyword(messageText)
             .then((response) => {
               let searchData = response.data;
@@ -72,7 +82,7 @@ function processMessages(evt, callback) {
               let preMessage = Message.SEARCH_RESULTS + Message.SEARCH_POS;
               MessageSender.sendTextMessage(senderId, preMessage)
                 .catch(errorEvent);
-              MessageSender.sendTemplateMessage(senderId, offers)
+              MessageSender.sendOfferTemplateMessage(senderId, offers)
                 .catch(errorEvent);
             })
             .catch((error) => {
@@ -81,6 +91,23 @@ function processMessages(evt, callback) {
                 .catch(errorEvent);
               console.warn(`Error at Lomadee search by ${messageText}`, error);
             });
+        } else if (msg.postback && msg.postback.payload) {
+          let payload = msg.postback.payload;
+          if (payload === START_PAYLOAD) {
+            console.log('Start payload');
+            let id = msg.sender.id;
+
+            MessageSender.sendTextMessage(id, Message.WELCOME)
+              .then(() => {
+                MessageSender.sendSubscribeMessage(
+                  id,
+                  Message.SUBSCRIBE_QUESTION
+                ).catch(errorEvent);
+              })
+              .catch(errorEvent);
+          } else {
+            console.warn('Webhook received unhandled payload', payload);
+          }
         } else {
           console.error('Webhook received unknown event: ', evt);
         }
