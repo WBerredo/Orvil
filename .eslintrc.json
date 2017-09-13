@@ -18,6 +18,7 @@
             "imports": "always-multiline",
             "exports": "always-multiline",
             "functions": "ignore"
-        }]
+        }],
+        "no-control-regex": "off"
     }
 }
