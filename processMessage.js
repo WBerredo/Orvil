@@ -1,136 +1,118 @@
 console.log('Loading function');
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+const ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+const APP_SECRET = process.env.APP_SECRET;
+
 const START_PAYLOAD = 'start';
-const MessageSender = require('./lib/MessageSender');
+const SUBSCRIBE_YES_PAYLOAD = 'SUBSCRIBE_YES';
+const SUBSCRIBE_NO_PAYLOAD = 'SUBSCRIBE_NO';
+
 const lomadee = require('./lib/LomadeeHandler');
 const Offer = require('./model/Offer');
 const Message = require('./model/Message');
 
-function verifyToken(parameters, callback) {
-  let serverToken = parameters['hub.verify_token'];
-  let response = {
-    body: null,
-    statusCode: null,
-  };
+const BootBot = require('bootbot');
 
-  if (serverToken === VERIFY_TOKEN) {
-    let challenge = parseInt(parameters['hub.challenge'], 10);
-    [response.body, response.statusCode] = [challenge, 200];
-  } else {
-    [response.body, response.statusCode] = [
-      'Error, wrong validation token',
-      400,
-    ];
-  }
+const bot = new BootBot({
+  accessToken: ACCESS_TOKEN,
+  verifyToken: VERIFY_TOKEN,
+  appSecret: APP_SECRET,
+});
 
-  callback(null, response);
-}
-
-function errorEvent(error) {
+function promiseErrors(error) {
+  // loggin errors
   console.warn(error);
 }
 
-function processMessages(evt, callback) {
-  let data = JSON.parse(evt.body);
-
-  if (data.object === 'page') {
-    // Iterate over each entry - there may be multiple if batched
-    data.entry.forEach((entry) => {
-      // Iterate over each messaging event
-      entry.messaging.forEach((msg) => {
-        if (msg.message) {
-          let senderId = msg.sender.id;
-          let messageText = msg.message.text;
-
-          if (msg.message.quick_reply &&
-            msg.message.quick_reply.payload ===
-            MessageSender.SUBSCRIBE_YES_PAYLOAD) {
-            console.log('Subscribe', senderId);
-            return;
-          } else if (msg.message.quick_reply &&
-            msg.message.quick_reply.payload ===
-            MessageSender.SUBSCRIBE_NO_PAYLOAD) {
-            return;
-          }
-
-          lomadee.searchByKeyword(messageText)
-            .then((response) => {
-              let searchData = response.data;
-
-              console.log(`Lomadee search by ${messageText}`, searchData);
-              let offers = searchData.offers
-                .map((item) => {
-                  // remove everything inside parentheses and insert Store name
-                  let name = item.product.name || item.name;
-                  let formattedName = name.replace(/\s*\(.*?\)\s*/g, '');
-                  if (item.store && item.store.name) {
-                    formattedName = `(${item.store.name}) ${formattedName}`;
-                  }
-
-                  let thumbnail = item.thumbnail;
-                  if (item.product.thumbnail && item.product.thumbnail.url) {
-                    thumbnail = item.product.thumbnail.url;
-                  }
-
-                  let price = `R$ ${item.price.toFixed(2).replace('.', ',')}`;
-                  let link = item.link;
-
-                  return new Offer(formattedName, price, thumbnail, link);
-                });
-
-              let preMessage = Message.SEARCH_RESULTS + Message.SEARCH_POS;
-              MessageSender.sendTextMessage(senderId, preMessage)
-                .catch(errorEvent);
-              MessageSender.sendOfferTemplateMessage(senderId, offers)
-                .catch(errorEvent);
-            })
-            .catch((error) => {
-              let preMessage = Message.SEARCH_NO_RESULTS + Message.SEARCH_POS;
-              MessageSender.sendTextMessage(senderId, preMessage)
-                .catch(errorEvent);
-              console.warn(`Error at Lomadee search by ${messageText}`, error);
-            });
-        } else if (msg.postback && msg.postback.payload) {
-          let payload = msg.postback.payload;
-          if (payload === START_PAYLOAD) {
-            console.log('Start payload');
-            let id = msg.sender.id;
-
-            MessageSender.sendTextMessage(id, Message.WELCOME)
-              .then(() => {
-                MessageSender.sendSubscribeMessage(
-                  id,
-                  Message.SUBSCRIBE_QUESTION
-                ).catch(errorEvent);
-              })
-              .catch(errorEvent);
-          } else {
-            console.warn('Webhook received unhandled payload', payload);
-          }
-        } else {
-          console.error('Webhook received unknown event: ', evt);
-        }
+function offerTemplateMessage(offers) {
+  let templateElements = [];
+  offers.forEach((offer) => {
+    if (offer instanceof Offer) {
+      templateElements.push({
+        title: offer.name,
+        subtitle: offer.price,
+        image_url: offer.image,
+        buttons: [{
+          type: 'web_url',
+          url: offer.link,
+          title: offer.buttonTitle,
+        }],
       });
-    });
-  }
+    }
+  });
 
-  // Assume all went well
-  const response = {
-    body: 'ok',
-    statusCode: 200,
-  };
-
-  callback(null, response);
+  return templateElements;
 }
 
-exports.handler = (event, context, callback) => {
-  let queryParameters = event.queryStringParameters;
+// get started message
+bot.on(`postback:${START_PAYLOAD}`, (payload, chat) => {
+  chat.say(Message.WELCOME)
+    .then(() => {
+      chat.sendTextMessage(Message.SUBSCRIBE_QUESTION, [
+        {
+          content_type: 'text',
+          title: Message.YES,
+          payload: SUBSCRIBE_YES_PAYLOAD,
+        },
+        {
+          content_type: 'text',
+          title: Message.NO,
+          payload: SUBSCRIBE_NO_PAYLOAD,
+        },
+      ]);
+    })
+    .catch(promiseErrors);
+});
 
-  // GET/POST requests
-  if (queryParameters) {
-    verifyToken(queryParameters, callback);
-  } else {
-    processMessages(event, callback);
+bot.on(`quick_reply:${SUBSCRIBE_YES_PAYLOAD}`, (payload, chat) => {
+  chat.say(Message.SUBSCRIBE_YES);
+});
+
+bot.on(`quick_reply:${SUBSCRIBE_NO_PAYLOAD}`, (payload, chat) => {
+  chat.say(Message.SUBSCRIBE_NO);
+});
+
+// book search
+bot.on('message', (payload, chat) => {
+  const text = payload.message.text;
+
+  if (text !== Message.YES && text !== Message.NO) {
+    lomadee.searchByKeyword(text)
+      .then((response) => {
+        let searchData = response.data;
+
+        console.log(`Lomadee search by ${text}`, searchData);
+        let offers = searchData.offers
+          .map((item) => {
+            // remove everything inside parentheses and insert Store name
+            let name = item.product.name || item.name;
+            let formattedName = name.replace(/\s*\(.*?\)\s*/g, '');
+            if (item.store && item.store.name) {
+              formattedName = `(${item.store.name}) ${formattedName}`;
+            }
+
+            let thumbnail = item.thumbnail;
+            if (item.product.thumbnail && item.product.thumbnail.url) {
+              thumbnail = item.product.thumbnail.url;
+            }
+
+            let price = `R$ ${item.price.toFixed(2).replace('.', ',')}`;
+            let link = item.link;
+
+            return new Offer(formattedName, price, thumbnail, link);
+          });
+
+        let preMessage = Message.SEARCH_RESULTS + Message.SEARCH_POS;
+        chat.say(preMessage);
+        chat.sendGenericTemplate(offerTemplateMessage(offers))
+          .catch(promiseErrors);
+      })
+      .catch((error) => {
+        chat.say(Message.SEARCH_NO_RESULTS + Message.SEARCH_POS);
+        console.warn(`Error at Lomadee search by ${text}`, error);
+      });
   }
-};
+});
+
+bot.start();

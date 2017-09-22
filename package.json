@@ -4,6 +4,7 @@
   "description": "Messenger chatbot for books search and recommendation",
   "main": "processMessage.js",
   "scripts": {
+    "start": "node -r dotenv/config processMessage.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint processMessage.js lib model"
   },
@@ -28,9 +29,11 @@
   "homepage": "https://github.com/WBerredo/Orvil#readme",
   "dependencies": {
     "axios": "^0.16.2",
+    "bootbot": "^1.0.12",
     "dedent-js": "^1.0.1"
   },
   "devDependencies": {
+    "dotenv": "^4.0.0",
     "eslint": "^4.6.1",
     "eslint-config-airbnb-base": "^12.0.0",
     "eslint-plugin-import": "^2.7.0"
