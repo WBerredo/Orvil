@@ -15,6 +15,27 @@ class Message {
       .replace(new RegExp('\n', 'g'), '');
   }
 
+  static get SUBSCRIBE_YES() {
+    return dedent`Uhuu, toda sexta-feira lhe enviarei algumas promoções. 
+      Espero que goste.`
+      .replace(new RegExp('\n', 'g'), '');
+  }
+
+  static get SUBSCRIBE_NO() {
+    return dedent`Tudo bem, mas lembre-se que se mudar de opinião basta 
+    selecionar a opção de "Receber promoções" no meu lateral. E sinta-se em 
+    casa para pesquisar livros à vontade.`
+      .replace(new RegExp('\n', 'g'), '');
+  }
+
+  static get YES() {
+    return 'Sim';
+  }
+
+  static get NO() {
+    return 'Não';
+  }
+
   static get SEARCH_RESULTS() {
     return 'Consegui encontrar os seguintes resultados para sua pesquisa.';
   }

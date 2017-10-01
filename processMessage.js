@@ -46,11 +46,12 @@ function processMessages(evt, callback) {
           if (msg.message.quick_reply &&
             msg.message.quick_reply.payload ===
             MessageSender.SUBSCRIBE_YES_PAYLOAD) {
-            console.log('Subscribe', senderId);
+            MessageSender.sendTextMessage(senderId, Message.SUBSCRIBE_YES);
             return;
           } else if (msg.message.quick_reply &&
             msg.message.quick_reply.payload ===
             MessageSender.SUBSCRIBE_NO_PAYLOAD) {
+            MessageSender.sendTextMessage(senderId, Message.SUBSCRIBE_NO);
             return;
           }
 
