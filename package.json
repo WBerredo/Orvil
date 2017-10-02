@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/WBerredo/Orvil#readme",
   "dependencies": {
+    "aws-sdk": "^2.125.0",
     "axios": "^0.16.2",
     "dedent-js": "^1.0.1"
   },
