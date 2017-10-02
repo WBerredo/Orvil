@@ -1,6 +1,6 @@
 {
   "name": "orvil",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Messenger chatbot for books search and recommendation",
   "main": "processMessage.js",
   "scripts": {
@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/WBerredo/Orvil#readme",
   "dependencies": {
+    "aws-sdk": "^2.125.0",
     "axios": "^0.16.2",
     "dedent-js": "^1.0.1"
   },

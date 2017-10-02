@@ -2,10 +2,14 @@ console.log('Loading function');
 
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const START_PAYLOAD = 'start';
+
 const MessageSender = require('./lib/MessageSender');
 const lomadee = require('./lib/LomadeeHandler');
+const dynamoDB = require('./lib/DynamoDBHandler');
+
 const Offer = require('./model/Offer');
 const Message = require('./model/Message');
+const User = require('./model/User');
 
 function verifyToken(parameters, callback) {
   let serverToken = parameters['hub.verify_token'];
@@ -46,11 +50,17 @@ function processMessages(evt, callback) {
           if (msg.message.quick_reply &&
             msg.message.quick_reply.payload ===
             MessageSender.SUBSCRIBE_YES_PAYLOAD) {
+            const user = new User(senderId, true);
+            dynamoDB.upsertUser(user);
+
             MessageSender.sendTextMessage(senderId, Message.SUBSCRIBE_YES);
             return;
           } else if (msg.message.quick_reply &&
             msg.message.quick_reply.payload ===
             MessageSender.SUBSCRIBE_NO_PAYLOAD) {
+            const user = new User(senderId, false);
+            dynamoDB.upsertUser(user);
+
             MessageSender.sendTextMessage(senderId, Message.SUBSCRIBE_NO);
             return;
           }
