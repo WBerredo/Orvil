@@ -47,6 +47,10 @@ class Message {
   static get SEARCH_POS() {
     return '\nPara pesquisar novamente, informe o nome do livro e/ou autor.';
   }
+
+  static get RECOMMEND() {
+    return 'As recomendações da semana pra você são essas, aproveite.';
+  }
 }
 
 module.exports = Message;

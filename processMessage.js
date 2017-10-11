@@ -12,14 +12,14 @@ const Message = require('./model/Message');
 const User = require('./model/User');
 
 function verifyToken(parameters, callback) {
-  let serverToken = parameters['hub.verify_token'];
-  let response = {
+  const serverToken = parameters['hub.verify_token'];
+  const response = {
     body: null,
     statusCode: null,
   };
 
   if (serverToken === VERIFY_TOKEN) {
-    let challenge = parseInt(parameters['hub.challenge'], 10);
+    const challenge = parseInt(parameters['hub.challenge'], 10);
     [response.body, response.statusCode] = [challenge, 200];
   } else {
     [response.body, response.statusCode] = [
@@ -36,7 +36,7 @@ function errorEvent(error) {
 }
 
 function processMessages(evt, callback) {
-  let data = JSON.parse(evt.body);
+  const data = JSON.parse(evt.body);
 
   if (data.object === 'page') {
     // Iterate over each entry - there may be multiple if batched
@@ -44,8 +44,8 @@ function processMessages(evt, callback) {
       // Iterate over each messaging event
       entry.messaging.forEach((msg) => {
         if (msg.message) {
-          let senderId = msg.sender.id;
-          let messageText = msg.message.text;
+          const senderId = msg.sender.id;
+          const messageText = msg.message.text;
 
           if (msg.message.quick_reply &&
             msg.message.quick_reply.payload ===
@@ -54,6 +54,7 @@ function processMessages(evt, callback) {
             dynamoDB.upsertUser(user);
 
             MessageSender.sendTextMessage(senderId, Message.SUBSCRIBE_YES);
+            console.log(`User ${senderId} has subscribed`);
             return;
           } else if (msg.message.quick_reply &&
             msg.message.quick_reply.payload ===
@@ -62,51 +63,34 @@ function processMessages(evt, callback) {
             dynamoDB.upsertUser(user);
 
             MessageSender.sendTextMessage(senderId, Message.SUBSCRIBE_NO);
+            console.log(`User ${senderId} has subscribed`);
             return;
           }
 
           lomadee.searchByKeyword(messageText)
             .then((response) => {
-              let searchData = response.data;
+              const searchData = response.data;
 
               console.log(`Lomadee search by ${messageText}`, searchData);
-              let offers = searchData.offers
-                .map((item) => {
-                  // remove everything inside parentheses and insert Store name
-                  let name = item.product.name || item.name;
-                  let formattedName = name.replace(/\s*\(.*?\)\s*/g, '');
-                  if (item.store && item.store.name) {
-                    formattedName = `(${item.store.name}) ${formattedName}`;
-                  }
+              const offers = searchData.offers.map(Offer.formatOffer);
 
-                  let thumbnail = item.thumbnail;
-                  if (item.product.thumbnail && item.product.thumbnail.url) {
-                    thumbnail = item.product.thumbnail.url;
-                  }
-
-                  let price = `R$ ${item.price.toFixed(2).replace('.', ',')}`;
-                  let link = item.link;
-
-                  return new Offer(formattedName, price, thumbnail, link);
-                });
-
-              let preMessage = Message.SEARCH_RESULTS + Message.SEARCH_POS;
+              const preMessage = Message.SEARCH_RESULTS + Message.SEARCH_POS;
               MessageSender.sendTextMessage(senderId, preMessage)
                 .catch(errorEvent);
               MessageSender.sendOfferTemplateMessage(senderId, offers)
                 .catch(errorEvent);
             })
             .catch((error) => {
-              let preMessage = Message.SEARCH_NO_RESULTS + Message.SEARCH_POS;
+              const preMessage = Message.SEARCH_NO_RESULTS + Message.SEARCH_POS;
               MessageSender.sendTextMessage(senderId, preMessage)
                 .catch(errorEvent);
               console.warn(`Error at Lomadee search by ${messageText}`, error);
             });
         } else if (msg.postback && msg.postback.payload) {
-          let payload = msg.postback.payload;
+          const payload = msg.postback.payload;
           if (payload === START_PAYLOAD) {
-            console.log('Start payload');
-            let id = msg.sender.id;
+            const id = msg.sender.id;
+            console.log('Start payload: ', id);
 
             MessageSender.sendTextMessage(id, Message.WELCOME)
               .then(() => {
@@ -136,7 +120,7 @@ function processMessages(evt, callback) {
 }
 
 exports.handler = (event, context, callback) => {
-  let queryParameters = event.queryStringParameters;
+  const queryParameters = event.queryStringParameters;
 
   // GET/POST requests
   if (queryParameters) {
