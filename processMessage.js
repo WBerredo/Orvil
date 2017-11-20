@@ -1,5 +1,6 @@
 console.log('Loading function');
 
+const OFFERS_QTD = 5;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const START_PAYLOAD = 'start';
 
@@ -72,7 +73,16 @@ function processMessages(evt, callback) {
               const searchData = response.data;
 
               console.log(`Lomadee search by ${messageText}`, searchData);
-              const offers = searchData.offers.map(Offer.formatOffer);
+              if (!Array.isArray(searchData.offers)) {
+                console.log('Searched data is not an array');
+                return;
+              }
+
+              const offers = searchData.offers
+                .filter(Offer.filterByEbit)
+                .sort(Offer.sortByBestPrice)
+                .slice(0, OFFERS_QTD)
+                .map(Offer.formatOffer);
 
               const preMessage = Message.SEARCH_RESULTS + Message.SEARCH_POS;
               MessageSender.sendTextMessage(senderId, preMessage)

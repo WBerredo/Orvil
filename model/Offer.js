@@ -9,6 +9,14 @@ class Offer {
     this.buttonTitle = buttonTitle;
   }
 
+  static filterByEbit(item) {
+    return item && item.store && item.store.ebit && item.store.ebit.id > 30;
+  }
+
+  static sortByBestPrice(offer1, offer2) {
+    return offer1.price - offer2.price;
+  }
+
   static formatOffer(item) {
     // remove everything inside parentheses and insert Store name
     const name = item.product.name || item.name;
